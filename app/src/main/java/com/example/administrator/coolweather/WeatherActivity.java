@@ -10,6 +10,7 @@ import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
@@ -76,7 +77,7 @@ public class WeatherActivity extends AppCompatActivity{
         back_left.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                dl.openDrawer(GravityCompat.START);
+                dl.openDrawer(Gravity.START);
             }
         });
         SharedPreferences prefs= PreferenceManager.getDefaultSharedPreferences(this);
