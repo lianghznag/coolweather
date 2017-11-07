@@ -6,6 +6,9 @@ import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -37,6 +40,9 @@ public class WeatherActivity extends AppCompatActivity{
     private LinearLayout forecastLayout;
     private ImageView back_left;
     private ImageView bingPicImg;
+    public SwipeRefreshLayout srfl;
+    public DrawerLayout dl;
+    private String mWeatherId;
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -46,6 +52,15 @@ public class WeatherActivity extends AppCompatActivity{
             getWindow().setStatusBarColor(Color.TRANSPARENT);
         }
         setContentView(R.layout.activity_weather);
+        srfl= (SwipeRefreshLayout) findViewById(R.id.srfl);
+        srfl.setColorSchemeResources(R.color.colorPrimary);
+        srfl.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                requestWeather(mWeatherId);
+            }
+        });
+        dl= (DrawerLayout) findViewById(R.id.dl);
         weatherLayout= (ScrollView) findViewById(R.id.weather_layout);
         titleCity= (TextView) findViewById(R.id.title_city);
         titleUpdateTime= (TextView) findViewById(R.id.title_update_time);
@@ -61,7 +76,7 @@ public class WeatherActivity extends AppCompatActivity{
         back_left.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                finish();
+                dl.openDrawer(GravityCompat.START);
             }
         });
         SharedPreferences prefs= PreferenceManager.getDefaultSharedPreferences(this);
@@ -75,11 +90,12 @@ public class WeatherActivity extends AppCompatActivity{
         String weatherString =prefs.getString("weather",null);
         if(weatherString!=null){
             Weather weather= Utiljson.handeWeatherResponse(weatherString);
+            mWeatherId=weather.basic.weatherId;
             showWeatherInfo(weather);
         }else {
-            String weatherId=getIntent().getStringExtra("weather_id");
+            mWeatherId=getIntent().getStringExtra("weather_id");
             weatherLayout.setVisibility(View.INVISIBLE);
-            requestWeather(weatherId);
+            requestWeather(mWeatherId);
         }
     }
 
@@ -146,7 +162,7 @@ public class WeatherActivity extends AppCompatActivity{
      * 根据天气id请求城市天气信息
      * @param weatherId
      */
-    private void requestWeather(final String weatherId) {
+    public void requestWeather(final String weatherId) {
         String weatherUrl="http://guolin.tech/api/weather?cityid="+weatherId+"&key=a7904ee6cd94444aa1c4b0eb98b7c99e";
         HttpUtil.sendOkHttpRequest(weatherUrl, new Callback() {
             @Override
@@ -155,6 +171,7 @@ public class WeatherActivity extends AppCompatActivity{
                      @Override
                      public void run() {
                          Toast.makeText(WeatherActivity.this,"获取天气失败",Toast.LENGTH_SHORT).show();
+                         srfl.setRefreshing(false);
                      }
                  });
             }
@@ -170,10 +187,12 @@ public class WeatherActivity extends AppCompatActivity{
                            SharedPreferences.Editor editor=PreferenceManager.getDefaultSharedPreferences(WeatherActivity.this).edit();
                            editor.putString("weather",responseText);
                            editor.apply();
+                           mWeatherId=weather.basic.weatherId;
                            showWeatherInfo(weather);
                        }else{
                            Toast.makeText(WeatherActivity.this,"获取天气失败",Toast.LENGTH_SHORT).show();
                        }
+                       srfl.setRefreshing(false);
                     }
                 });
             }
